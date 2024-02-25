@@ -3,6 +3,7 @@ import multiprocessing
 import copyreg
 import types
 
+
 def read_image(filename):
     with open(filename, "rb") as f:
         header = f.readline().decode().strip()
@@ -28,7 +29,7 @@ def read_image(filename):
                 pixel = ord(f.read(1))
                 row.append(pixel)
             image_data.append(row)
-        return image_data, width, height
+        return image_data
 
 
 def apply_threshold(image_matrix, threshold):
@@ -71,30 +72,29 @@ def rotate_image(image_matrix, angle):
 
 
 def scale_image(image_matrix, scale_factor):
-    def scale_image(image_matrix, scale_factor):
-        # Determine dimensions of the image
-        rows = len(image_matrix)
-        cols = len(image_matrix[0])
+    # Determine dimensions of the image
+    rows = len(image_matrix)
+    cols = len(image_matrix[0])
 
-        # Calculate new dimensions after scaling
-        new_rows = int(rows * scale_factor)
-        new_cols = int(cols * scale_factor)
+    # Calculate new dimensions after scaling
+    new_rows = int(rows * scale_factor)
+    new_cols = int(cols * scale_factor)
 
-        # Initialize a new matrix for scaled image
-        scaled_image = [[0] * new_cols for _ in range(new_rows)]
+    # Initialize a new matrix for scaled image
+    scaled_image = [[0] * new_cols for _ in range(new_rows)]
 
-        # Iterate through each pixel in the scaled image
-        for i in range(new_rows):
-            for j in range(new_cols):
-                # Calculate corresponding pixel position in original image
-                original_x = int(i / scale_factor)
-                original_y = int(j / scale_factor)
+    # Iterate through each pixel in the scaled image
+    for i in range(new_rows):
+        for j in range(new_cols):
+            # Calculate corresponding pixel position in original image
+            original_x = int(i / scale_factor)
+            original_y = int(j / scale_factor)
 
-                # Check if original coordinates are within bounds
-                if 0 <= original_x < rows and 0 <= original_y < cols:
-                    scaled_image[i][j] = image_matrix[original_x][original_y]
+            # Check if original coordinates are within bounds
+            if 0 <= original_x < rows and 0 <= original_y < cols:
+                scaled_image[i][j] = image_matrix[original_x][original_y]
 
-        return scaled_image
+    return scaled_image
 
 
 def parallel_rotate_scale(image_matrix, angle, scale_factor):
@@ -118,19 +118,32 @@ def parallel_rotate_scale(image_matrix, angle, scale_factor):
     return scaled_image
 
 
+def write_image(image_matrix, filename):
+    with open(filename, "wb") as f:
+        # Write PGM header
+        f.write(b"P5\n")
+        f.write(b"# Created by ImageProcessing\n")
+        f.write(f"{len(image_matrix[0])} {len(image_matrix)}\n".encode())
+        f.write(b"255\n")
+
+        # Write image data
+        for row in image_matrix:
+            for pixel in row:
+                f.write(bytes([pixel]))
+
+
 def main():
     # Read the image file
-    image_matrix, width, height = read_image("xongxina.pgm")
+    image_matrix = read_image("City.pgm")
 
     # Apply thresholding
     thresholded_image = apply_threshold(image_matrix, 128)  # Example threshold value
 
     # Rotate by 45 degrees and scale by a factor of 2
-    rotated_scaled_image = parallel_rotate_scale(thresholded_image, 45, 2)
+    rotated_scaled_image = parallel_rotate_scale(thresholded_image, 90, 15)
 
-    # Output or further processing
-    for row in rotated_scaled_image:
-        print(row)
+    # Write the rotated and scaled image to a new file
+    write_image(rotated_scaled_image, "rotated_scaled_image.pgm")
 
 
 if __name__ == "__main__":
